@@ -32,13 +32,13 @@ void renderRays(pcl::visualization::PCLVisualizer::Ptr &viewer, const Vect3 &ori
         viewer->addLine(
                 pcl::PointXYZ(static_cast<float>(origin.x), static_cast<float>(origin.y), static_cast<float>(origin.z)),
                 point, 0.780, 0.222, 0.400, "ray" + std::to_string(countRays));
-        countRays++;
+        ++countRays;
     }
 }
 
 void clearRays(pcl::visualization::PCLVisualizer::Ptr &viewer) {
     while (countRays) {
-        countRays--;
+        --countRays;
         viewer->removeShape("ray" + std::to_string(countRays));
     }
 }

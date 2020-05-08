@@ -86,23 +86,29 @@ struct Lidar {
 
     Lidar(std::vector<Car> setCars, double setGroundSlope)
             : cloud(new pcl::PointCloud<pcl::PointXYZ>()), position(0, 0, 2.6) {
-        minDistance = 5;    // ignore points on the roof of the ego car
+
+        minDistance = 5;    // we'd like to ignore points on the roof of the ego car
         maxDistance = 50;
         resolution = 0.2;
         sderr = 0.2;        // error standard deviation (in m²)
         cars = std::move(setCars);
         groundSlope = setGroundSlope;
 
-        // TODO:: increase number of layers to 8 to get higher resoultion pcd
-        int numLayers = 3;
+        // It is generally wished for to have big field of view (in order to capture more of the environment)
+        // and a high number of layers. The lower the number of layers, the more laser rays will spread out.
+        // Since the distance between rays increases with the distance from the sensor, eventually even large
+        // objects will fall "between" two rays and become invisible to the sensor.
+        const int numLayers = 8;
+
         // the steepest vertical angle
-        double steepestAngle = -30.0 * deg2Rad;
-        double angleRange = 26.0 * deg2Rad;
-        // TODO:: set to pi/64 to get higher resolution pcd
-        double horizontalAngleInc = pi / 6;
+        const auto steepestAngle = -30.0 * deg2Rad;
+        const auto angleRange = 26.0 * deg2Rad;
 
-        double angleIncrement = angleRange / numLayers;
+        // The smaller the increments, the more fine-grained our measurements will be horizontally.
+        // The same logic as above applies: As the rays spread out, objects between them become "invisible".
+        const auto horizontalAngleInc = pi / 64;
 
+        const auto angleIncrement = angleRange / numLayers;
         for (double angleVertical = steepestAngle; angleVertical < steepestAngle + angleRange; angleVertical += angleIncrement) {
             for (double angle = 0; angle <= pi2; angle += horizontalAngleInc) {
                 Ray ray {position, angle, angleVertical, resolution};
