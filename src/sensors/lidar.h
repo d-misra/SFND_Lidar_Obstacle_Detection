@@ -5,7 +5,9 @@
 #include <ctime>
 #include <chrono>
 
-const double pi = 3.1415;
+constexpr double pi = 3.1415926535897932384626433832795028841971693993751058209749445923078164062; // ... approximately.
+constexpr double pi2 = 2.0 * pi;
+constexpr double deg2Rad = pi / 180.0;
 
 struct Ray {
 
@@ -93,25 +95,23 @@ struct Lidar {
         // TODO:: increase number of layers to 8 to get higher resoultion pcd
         int numLayers = 3;
         // the steepest vertical angle
-        double steepestAngle = 30.0 * (-pi / 180);
-        double angleRange = 26.0 * (pi / 180);
+        double steepestAngle = -30.0 * deg2Rad;
+        double angleRange = 26.0 * deg2Rad;
         // TODO:: set to pi/64 to get higher resoultion pcd
         double horizontalAngleInc = pi / 6;
 
         double angleIncrement = angleRange / numLayers;
 
-        for (double angleVertical = steepestAngle;
-             angleVertical < steepestAngle + angleRange; angleVertical += angleIncrement) {
-            for (double angle = 0; angle <= 2 * pi; angle += horizontalAngleInc) {
+        for (double angleVertical = steepestAngle; angleVertical < steepestAngle + angleRange; angleVertical += angleIncrement) {
+            for (double angle = 0; angle <= pi2; angle += horizontalAngleInc) {
                 Ray ray(position, angle, angleVertical, resoultion);
                 rays.push_back(ray);
             }
         }
     }
 
-    ~Lidar() {
-        // pcl uses boost smart pointers for cloud pointer so we don't have to worry about manually freeing the memory
-    }
+    // pcl uses boost smart pointers for cloud pointer so we don't have to worry about manually freeing the memory
+    ~Lidar() = default;
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr scan() {
         cloud->points.clear();
