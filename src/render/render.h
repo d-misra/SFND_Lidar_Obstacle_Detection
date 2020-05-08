@@ -27,8 +27,31 @@ struct Vect3 {
     Vect3(double setX, double setY, double setZ)
             : x(setX), y(setY), z(setZ) {}
 
+    explicit Vect3(const pcl::PointXYZ &pt)
+            : x(pt.x), y(pt.y), z(pt.z) {}
+
+    Vect3 cross(const Vect3 &vec) const {
+        return Vect3{
+            y*vec.z - z*vec.y,
+            z*vec.x - x*vec.z,
+            x*vec.y - y*vec.x
+        };
+    }
+
+    double normSq() const {
+        return x*x + y*y + z*z;
+    }
+
+    double norm() const {
+        return std::sqrt(normSq());
+    }
+
     Vect3 operator+(const Vect3 &vec) const {
         return Vect3{x + vec.x, y + vec.y, z + vec.z};
+    }
+
+    Vect3 operator-(const Vect3 &vec) const {
+        return Vect3{x - vec.x, y - vec.y, z - vec.z};
     }
 
 };
