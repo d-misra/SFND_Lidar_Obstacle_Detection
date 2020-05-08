@@ -1,5 +1,8 @@
 # Sensor Fusion Self-Driving Car Course
 
+**Warning when cloning:** This repository is pretty heavy because the original creators chose to include
+Point Cloud Data files at [`src/sensors/data/pcd`](src/sensors/data/pcd); these files sum up to about 342 MB.
+
 <img src="media/ObstacleDetectionFPS.gif" width="700" height="400" />
 
 ### Welcome to the Sensor Fusion course for self-driving cars.
