@@ -11,13 +11,24 @@ project(playback)
 
 find_package(PCL 1.10 REQUIRED)
 
+# Public header files
+set(HEADER_FILES
+        src/group_defs.dox)
+
+# Source files and private header files go here.
+set(SOURCE_FILES
+        src/environment.cpp
+        src/render/render.cpp
+        src/processPointClouds.cpp)
+
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 list(REMOVE_ITEM PCL_LIBRARIES "vtkproj4")
 
 
-add_executable (environment src/environment.cpp src/render/render.cpp src/processPointClouds.cpp)
+
+add_executable (environment ${HEADER_FILES} ${SOURCE_FILES})
 target_link_libraries (environment ${PCL_LIBRARIES})
 
 

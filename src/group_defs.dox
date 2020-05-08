@@ -1,0 +1,15 @@
+/**
+ * @defgroup SFND_Lidar_Obstacle_Detection Sensor Fusion for Self-Driving Cars
+ *
+ * \author Markus Mayer
+ * \author Aaron Brown
+ *
+ * @{
+ */
+
+/**
+ * @defgroup environment Simulator Environment
+ * @brief Create simple 3d highway environment using PCL for exploring self-driving car sensors.
+ */
+
+/** @} */
