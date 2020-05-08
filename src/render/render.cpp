@@ -15,7 +15,7 @@ void renderHighway(pcl::visualization::PCLVisualizer::Ptr &viewer) {
                     "highwayPavement");
     viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_REPRESENTATION,
                                         pcl::visualization::PCL_VISUALIZER_REPRESENTATION_SURFACE, "highwayPavement");
-    viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, .2, .2, .2, "highwayPavement");
+    viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, .149, .196, .220, "highwayPavement");
     viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY, 1.0, "highwayPavement");
     viewer->addLine(pcl::PointXYZ(-roadLength / 2, -roadWidth / 6, 0.01),
                     pcl::PointXYZ(roadLength / 2, -roadWidth / 6, 0.01), 1, 1, 0, "line1");

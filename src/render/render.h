@@ -8,6 +8,7 @@
 #include <pcl/visualization/pcl_visualizer.h>
 #include "box.h"
 #include <iostream>
+#include <utility>
 #include <vector>
 #include <string>
 
@@ -15,7 +16,7 @@ struct Color {
 
     float r, g, b;
 
-    Color(float setR, float setG, float setB)
+    constexpr Color(float setR, float setG, float setB)
             : r(setR), g(setG), b(setB) {}
 };
 
@@ -26,10 +27,10 @@ struct Vect3 {
     Vect3(double setX, double setY, double setZ)
             : x(setX), y(setY), z(setZ) {}
 
-    Vect3 operator+(const Vect3 &vec) {
-        Vect3 result(x + vec.x, y + vec.y, z + vec.z);
-        return result;
+    Vect3 operator+(const Vect3 &vec) const {
+        return Vect3{x + vec.x, y + vec.y, z + vec.z};
     }
+
 };
 
 enum CameraAngle {
@@ -45,9 +46,9 @@ struct Car {
     Color color;
 
     Car(Vect3 setPosition, Vect3 setDimensions, Color setColor, std::string setName)
-            : position(setPosition), dimensions(setDimensions), color(setColor), name(setName) {}
+            : position(setPosition), dimensions(setDimensions), color(setColor), name(std::move(setName)) {}
 
-    void render(pcl::visualization::PCLVisualizer::Ptr &viewer) {
+    void render(pcl::visualization::PCLVisualizer::Ptr &viewer) const {
         // render bottom of car
         viewer->addCube(position.x - dimensions.x / 2, position.x + dimensions.x / 2, position.y - dimensions.y / 2,
                         position.y + dimensions.y / 2, position.z, position.z + dimensions.z * 2 / 3, color.r, color.g,
@@ -68,7 +69,7 @@ struct Car {
     }
 
     // collision helper function
-    bool inbetween(double point, double center, double range) {
+    static bool inbetween(double point, double center, double range) {
         return (center - range <= point) && (center + range >= point);
     }
 

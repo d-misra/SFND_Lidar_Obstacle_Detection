@@ -14,10 +14,13 @@
 
 std::vector<Car> initHighway(bool renderScene, pcl::visualization::PCLVisualizer::Ptr &viewer) {
 
-    Car egoCar{Vect3{0, 0, 0}, Vect3{4, 2, 2}, Color{0, 1, 0}, "egoCar"};
-    Car car1{Vect3{15, 0, 0}, Vect3{4, 2, 2}, Color{0, 0, 1}, "car1"};
-    Car car2{Vect3{8, -4, 0}, Vect3{4, 2, 2}, Color{0, 0, 1}, "car2"};
-    Car car3{Vect3{-12, 4, 0}, Vect3{4, 2, 2}, Color{0, 0, 1}, "car3"};
+    constexpr auto green = Color{0.365, 0.788, 0.290};
+    constexpr auto blue = Color{0, 0.443, 0.73};
+
+    Car egoCar{Vect3{0, 0, 0}, Vect3{4, 2, 2}, green, "egoCar"};
+    Car car1{Vect3{15, 0, 0}, Vect3{4, 2, 2}, blue, "car1"};
+    Car car2{Vect3{8, -4, 0}, Vect3{4, 2, 2}, blue, "car2"};
+    Car car3{Vect3{-12, 4, 0}, Vect3{4, 2, 2}, blue, "car3"};
 
     std::vector<Car> cars { egoCar, car1, car2, car3 };
 
@@ -52,7 +55,7 @@ void simpleHighway(pcl::visualization::PCLVisualizer::Ptr &viewer) {
 //setAngle: SWITCH CAMERA ANGLE {XY, TopDown, Side, FPS}
 void initCamera(CameraAngle setAngle, pcl::visualization::PCLVisualizer::Ptr &viewer) {
 
-    viewer->setBackgroundColor(0, 0, 0);
+    viewer->setBackgroundColor(0.133, 0.133, 0.133);
     viewer->initCameraParameters();
 
     // distance away in meters
