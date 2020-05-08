@@ -63,6 +63,7 @@ struct Ray {
         std::normal_distribution<> distanceNoise {0, sderr};
 
         if ((castDistance >= minDistance) && (castDistance <= maxDistance)) {
+            // Note that this is a massively oversimplified noise model.
             const auto px = castPosition.x + distanceNoise(gen);
             const auto py = castPosition.y + distanceNoise(gen);
             const auto pz = castPosition.z + distanceNoise(gen);
