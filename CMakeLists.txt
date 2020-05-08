@@ -7,6 +7,14 @@ project(playback)
 
 find_package(PCL 1.10 REQUIRED)
 
+# We attempt to use ccache to speed up the build.
+find_program(CCACHE_FOUND "ccache")
+if(CCACHE_FOUND)
+    message(STATUS "Using ccache for building.")
+    set_property(GLOBAL PROPERTY LAUNCH_COMPILE ccache)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+endif(CCACHE_FOUND)
+
 # Public header files
 set(HEADER_FILES
         src/group_defs.dox)
@@ -35,3 +43,12 @@ target_compile_features(environment PRIVATE
         # ... cxx_auto_type
         # ... cxx_defaulted_functions
         )
+
+
+# RANSAC quiz
+
+add_executable (ransac "src/quiz/ransac/ransac2d.cpp" "src/render/render.cpp")
+target_link_libraries (ransac ${PCL_LIBRARIES})
+
+add_executable (cluster "src/quiz/cluster/cluster.cpp" "src/render/render.cpp")
+target_link_libraries (cluster ${PCL_LIBRARIES})
