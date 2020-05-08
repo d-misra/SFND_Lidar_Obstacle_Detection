@@ -31,7 +31,7 @@ void renderRays(pcl::visualization::PCLVisualizer::Ptr &viewer, const Vect3 &ori
     for (pcl::PointXYZ point : cloud->points) {
         viewer->addLine(
                 pcl::PointXYZ(static_cast<float>(origin.x), static_cast<float>(origin.y), static_cast<float>(origin.z)),
-                point, 1, 0, 0, "ray" + std::to_string(countRays));
+                point, 0.780, 0.222, 0.400, "ray" + std::to_string(countRays));
         countRays++;
     }
 }
