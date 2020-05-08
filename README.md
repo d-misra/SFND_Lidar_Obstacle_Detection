@@ -78,3 +78,13 @@ Here's how it looks like:
 
 I also took the liberty to tune the colors a bit, because the original
 visualization was just horrible on the eyes. Some things are just not negotiable.
+
+Using a sample consensus approach (specifically, RANSAC) the obtained
+point cloud was then separated into two plane and obstacle clodus
+using a planar model.
+
+![](media/point-cloud-separation.webp)
+
+In here, red points represent obstacles, while white points represent
+the plane. Note that in the video, the sensor noise was reduced a bit
+to improve the visual appearance.

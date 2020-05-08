@@ -40,31 +40,75 @@ ProcessPointClouds<PointT>::FilterCloud(typename pcl::PointCloud<PointT>::Ptr cl
 
 template<typename PointT>
 std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr>
-ProcessPointClouds<PointT>::SeparateClouds(pcl::PointIndices::Ptr inliers,
+ProcessPointClouds<PointT>::SeparateClouds(const pcl::PointIndices::Ptr& inliers,
                                            typename pcl::PointCloud<PointT>::Ptr cloud) {
-    // TODO: Create two new point clouds, one cloud with obstacles and other with segmented plane
 
-    std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr> segResult(cloud, cloud);
-    return segResult;
+    typename pcl::PointCloud<PointT>::Ptr planeCloud {new pcl::PointCloud<PointT>};
+    typename pcl::PointCloud<PointT>::Ptr obstacleCloud {new pcl::PointCloud<PointT>};
+
+    // Creating the cloud containing plane points is trivial
+    // since we already know the inliers.
+    for (auto index : inliers->indices) {
+        planeCloud->points.push_back(cloud->points[index]);
+    }
+
+    // Next, obtain the obstacle cloud byt extracting the outliers.
+    pcl::ExtractIndices<PointT> extract;
+    extract.setInputCloud(cloud);
+    extract.setIndices(inliers);
+    extract.setNegative(true); // this is key
+    extract.filter(*obstacleCloud);
+
+    return std::make_pair(planeCloud, obstacleCloud);
 }
 
 
+/**
+ * Perform planar segmentation of a point cloud.
+ * @tparam PointT The point type.
+ * @param cloud The point cloud to segment.
+ * @param maxIterations The maximum number of RANSAC iterations.
+ * @param distanceThreshold The RANSAC distance threshold.
+ * @return A pair of plane points and non-plane points (outliers).
+ */
 template<typename PointT>
 std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr>
-ProcessPointClouds<PointT>::SegmentPlane(typename pcl::PointCloud<PointT>::Ptr cloud, int maxIterations,
-                                         float distanceThreshold) {
+ProcessPointClouds<PointT>::SegmentPlane(typename pcl::PointCloud<PointT>::Ptr cloud,
+        int maxIterations, float distanceThreshold) {
+
     // Time segmentation process
     auto startTime = std::chrono::steady_clock::now();
-    pcl::PointIndices::Ptr inliers;
-    // TODO:: Fill in this function to find inliers for the cloud.
+
+    // Prepare the (random) sample consensus based point segmentation.
+    // See e.g.
+    // - https://pcl-tutorials.readthedocs.io/en/master/planar_segmentation.html
+    // - https://pointcloudlibrary.github.io/documentation/classpcl_1_1_s_a_c_segmentation.html
+    pcl::SACSegmentation<PointT> seg;
+    pcl::PointIndices::Ptr inliers {new pcl::PointIndices};
+    pcl::ModelCoefficients::Ptr coefficients {new pcl::ModelCoefficients};
+
+    // Configure segmentation.
+    seg.setOptimizeCoefficients(true);
+    seg.setModelType(pcl::SACMODEL_PLANE);
+    seg.setMethodType(pcl::SAC_RANSAC);
+    seg.setMaxIterations(maxIterations);
+    seg.setDistanceThreshold(distanceThreshold);
+
+    // Determine planar points in the cloud.
+    seg.setInputCloud(cloud);
+    seg.segment(*inliers, *coefficients);
+    if (inliers->indices.empty()) {
+        std::cerr << "Could not estimate planar model for the given point cloude." << std::endl;
+    }
+
+    // Separate the result into inliers and outliers.
+    const auto planeAndObstacles = SeparateClouds(inliers, cloud);
 
     auto endTime = std::chrono::steady_clock::now();
     auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-    std::cout << "plane segmentation took " << elapsedTime.count() << " milliseconds" << std::endl;
+    std::cout << "plane segmentation took " << elapsedTime.count() << " ms" << std::endl;
 
-    std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr> segResult = SeparateClouds(
-            inliers, cloud);
-    return segResult;
+    return planeAndObstacles;
 }
 
 

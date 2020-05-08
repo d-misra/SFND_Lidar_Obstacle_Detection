@@ -6,6 +6,8 @@
  * \author Aaron Brown
  * */
 
+#include <memory>
+
 #include "sensors/lidar.h"
 #include "render/render.h"
 #include "processPointClouds.h"
@@ -47,17 +49,23 @@ void simpleHighway(pcl::visualization::PCLVisualizer::Ptr &viewer) {
 
     // Initialize LiDAR.
     const auto groundSlope = 0;
-    const auto lidar = new Lidar(cars, groundSlope);
+    const auto lidar = std::make_unique<Lidar>(cars, groundSlope);
 
     // Scan environment and render results.
     const auto pointCloud = lidar->scan();
 #ifdef RENDER_RAYS
     renderRays(viewer, lidar->position, pointCloud);
 #endif
-    renderPointCloud(viewer, pointCloud, "inputCloud", Color{0.831, 0.812, 0.788});
 
-    // TODO:: Create point processor
+    // Obtain point processor.
+    const auto pointProcessor = std::make_unique<ProcessPointClouds<pcl::PointXYZ>>();
 
+    const auto maxIterations = 100;
+    const auto distanceTolerance = 0.5F;
+    const auto [ planeCloud, obstacleCloud ] = pointProcessor->SegmentPlane(pointCloud, maxIterations, distanceTolerance);
+
+    renderPointCloud(viewer, planeCloud, "plane", Color{0.831, 0.812, 0.788});
+    renderPointCloud(viewer, obstacleCloud, "obstacles", Color{0.831, 0.341, 0.412});
 }
 
 
