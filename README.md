@@ -36,7 +36,6 @@ in newer cars.
 ability to measure velocity of objects we can get a better understanding
 of the surrounding environment than we could using one of the sensors alone.
 
-
 ## Building the project
 
 This project requires [PCL](https://pointcloudlibrary.github.io/). On a
@@ -60,3 +59,22 @@ You can then run the simulator from the `environment` binary:
 ```bash
 ./environment
 ```
+
+## The code
+
+Initially, the simulated LiDAR sensor was updated to have a higher
+horizontal and vertical resolution, as well as some measurement noise.
+In this setup, we have:
+
+- Distance range of 5 .. 50 m.
+- Distance noise of zero mean, 0.2 m standard deviation.
+- Field of view of -30.0° .. 26°.
+- Eight laser layers (i.e. 7° vertical resolution).
+- Angle increments of π/64 (i.e. 2.8125° horizontal resolution).
+
+Here's how it looks like:
+
+![](media/lidar-updated.png)
+
+I also took the liberty to tune the colors a bit, because the original
+visualization was just horrible on the eyes. Some things are just not negotiable.
