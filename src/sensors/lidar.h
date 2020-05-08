@@ -90,7 +90,7 @@ struct Lidar {
         minDistance = 5;    // we'd like to ignore points on the roof of the ego car
         maxDistance = 50;
         resolution = 0.2;
-        sderr = 0.2;        // error standard deviation (in m²)
+        sderr = 0.2;        // error standard deviation (in m)
         cars = std::move(setCars);
         groundSlope = setGroundSlope;
 
