@@ -4,6 +4,8 @@
 #include "../render/render.h"
 #include <ctime>
 #include <chrono>
+#include <random>
+#include <utility>
 
 constexpr double pi = 3.1415926535897932384626433832795028841971693993751058209749445923078164062; // ... approximately.
 constexpr double pi2 = 2.0 * pi;
@@ -17,11 +19,13 @@ struct Ray {
     Vect3 castPosition;
     double castDistance;
 
+    std::mt19937 gen{(std::random_device{})()};
+
     // parameters:
     // setOrigin: the starting position from where the ray is cast
     // horizontalAngle: the angle of direction the ray travels on the xy plane
     // verticalAngle: the angle of direction between xy plane and ray
-    // 				  for example 0 radians is along xy plane and pi/2 radians is stright up
+    //                 for example 0 radians is along xy plane and pi/2 radians is stright up
     // resoultion: the magnitude of the ray's step, used for ray casting, the smaller the more accurate but the more expensive
 
     Ray(Vect3 setOrigin, double horizontalAngle, double verticalAngle, double setResolution)
@@ -56,15 +60,14 @@ struct Ray {
             }
         }
 
-        if ((castDistance >= minDistance) && (castDistance <= maxDistance)) {
-            // add noise based on standard deviation error
-            double rx = ((double) rand() / (RAND_MAX));
-            double ry = ((double) rand() / (RAND_MAX));
-            double rz = ((double) rand() / (RAND_MAX));
-            cloud->points.push_back(pcl::PointXYZ(castPosition.x + rx * sderr, castPosition.y + ry * sderr,
-                                                  castPosition.z + rz * sderr));
-        }
+        std::normal_distribution<> distanceNoise {0, sderr};
 
+        if ((castDistance >= minDistance) && (castDistance <= maxDistance)) {
+            const auto px = castPosition.x + distanceNoise(gen);
+            const auto py = castPosition.y + distanceNoise(gen);
+            const auto pz = castPosition.z + distanceNoise(gen);
+            cloud->points.emplace_back(px, py, pz);
+        }
     }
 
 };
@@ -78,18 +81,16 @@ struct Lidar {
     double groundSlope;
     double minDistance;
     double maxDistance;
-    double resoultion;
+    double resolution;
     double sderr;
 
     Lidar(std::vector<Car> setCars, double setGroundSlope)
             : cloud(new pcl::PointCloud<pcl::PointXYZ>()), position(0, 0, 2.6) {
-        // TODO:: set minDistance to 5 to remove points from roof of ego car
-        minDistance = 0;
+        minDistance = 5;    // ignore points on the roof of the ego car
         maxDistance = 50;
-        resoultion = 0.2;
-        // TODO:: set sderr to 0.2 to get more interesting pcd files
-        sderr = 0.0;
-        cars = setCars;
+        resolution = 0.2;
+        sderr = 0.2;        // error standard deviation (in m²)
+        cars = std::move(setCars);
         groundSlope = setGroundSlope;
 
         // TODO:: increase number of layers to 8 to get higher resoultion pcd
@@ -97,14 +98,14 @@ struct Lidar {
         // the steepest vertical angle
         double steepestAngle = -30.0 * deg2Rad;
         double angleRange = 26.0 * deg2Rad;
-        // TODO:: set to pi/64 to get higher resoultion pcd
+        // TODO:: set to pi/64 to get higher resolution pcd
         double horizontalAngleInc = pi / 6;
 
         double angleIncrement = angleRange / numLayers;
 
         for (double angleVertical = steepestAngle; angleVertical < steepestAngle + angleRange; angleVertical += angleIncrement) {
             for (double angle = 0; angle <= pi2; angle += horizontalAngleInc) {
-                Ray ray(position, angle, angleVertical, resoultion);
+                Ray ray {position, angle, angleVertical, resolution};
                 rays.push_back(ray);
             }
         }
@@ -116,8 +117,9 @@ struct Lidar {
     pcl::PointCloud<pcl::PointXYZ>::Ptr scan() {
         cloud->points.clear();
         auto startTime = std::chrono::steady_clock::now();
-        for (Ray ray : rays)
+        for (auto& ray : rays) {
             ray.rayCast(cars, minDistance, maxDistance, cloud, groundSlope, sderr);
+        }
         auto endTime = std::chrono::steady_clock::now();
         auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
         cout << "ray casting took " << elapsedTime.count() << " milliseconds" << endl;
