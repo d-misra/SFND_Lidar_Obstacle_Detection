@@ -7,9 +7,9 @@
 void renderHighway(pcl::visualization::PCLVisualizer::Ptr &viewer) {
 
     // units in meters
-    double roadLength = 50.0;
-    double roadWidth = 12.0;
-    double roadHeight = 0.2;
+    const auto roadLength = 50.0F;
+    const auto roadWidth = 12.0F;
+    const auto roadHeight = 0.2;
 
     viewer->addCube(-roadLength / 2, roadLength / 2, -roadWidth / 2, roadWidth / 2, -roadHeight, 0, .2, .2, .2,
                     "highwayPavement");
@@ -29,7 +29,9 @@ void renderRays(pcl::visualization::PCLVisualizer::Ptr &viewer, const Vect3 &ori
                 const pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud) {
 
     for (pcl::PointXYZ point : cloud->points) {
-        viewer->addLine(pcl::PointXYZ(origin.x, origin.y, origin.z), point, 1, 0, 0, "ray" + std::to_string(countRays));
+        viewer->addLine(
+                pcl::PointXYZ(static_cast<float>(origin.x), static_cast<float>(origin.y), static_cast<float>(origin.z)),
+                point, 1, 0, 0, "ray" + std::to_string(countRays));
         countRays++;
     }
 }
@@ -42,7 +44,7 @@ void clearRays(pcl::visualization::PCLVisualizer::Ptr &viewer) {
 }
 
 void renderPointCloud(pcl::visualization::PCLVisualizer::Ptr &viewer, const pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud,
-                      std::string name, Color color) {
+                      const std::string& name, Color color) {
 
     viewer->addPointCloud<pcl::PointXYZ>(cloud, name);
     viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 4, name);
@@ -50,7 +52,7 @@ void renderPointCloud(pcl::visualization::PCLVisualizer::Ptr &viewer, const pcl:
 }
 
 void renderPointCloud(pcl::visualization::PCLVisualizer::Ptr &viewer, const pcl::PointCloud<pcl::PointXYZI>::Ptr &cloud,
-                      std::string name, Color color) {
+                      const std::string& name, Color color) {
 
     if (color.r == -1) {
         // Select color based off of cloud intensity
@@ -92,7 +94,7 @@ void renderBox(pcl::visualization::PCLVisualizer::Ptr &viewer, Box box, int id, 
     viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY, opacity * 0.3, cubeFill);
 }
 
-void renderBox(pcl::visualization::PCLVisualizer::Ptr &viewer, BoxQ box, int id, Color color, float opacity) {
+void renderBox(pcl::visualization::PCLVisualizer::Ptr &viewer, const BoxQ& box, int id, Color color, float opacity) {
     if (opacity > 1.0)
         opacity = 1.0;
     if (opacity < 0.0)
