@@ -89,9 +89,14 @@ In here, red points represent obstacles, while white points represent
 the plane. Note that in the video, the sensor noise was reduced a bit
 to improve the visual appearance.
 
-Euclidean cluster extraction via Kd-trees was added to tell the separate
+A Kd-tree backed Euclidean cluster extraction was added to tell the separate
 cars apart. In here, we're making use of the fact that the ground plane
 already is separated from the rest; only having to look at the outliers
 drastically simplifies the process.
 
 ![](media/cluster-segmentation.png)
+
+Using PCL's `pcl::getMinMax3D()` function, the extends of the segmented
+clusters are determined and used to provide axis-aligned bounding boxes.
+
+![](media/euclidean-cluster-extraction.png)
