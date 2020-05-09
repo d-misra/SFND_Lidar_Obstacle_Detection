@@ -100,3 +100,15 @@ Using PCL's `pcl::getMinMax3D()` function, the extends of the segmented
 clusters are determined and used to provide axis-aligned bounding boxes.
 
 ![](media/euclidean-cluster-extraction.png)
+
+Principal component analysis can be used to determine the orientation of
+the point cloud. Some assumptions about the valid transformations have
+to be made here: If full 3D pose is allowed, the produced bounding boxes
+are optimal, but very unlikely four ground-bound vehicles such as cars.
+However, if the anticipated objects can be freely aligned in space,
+this may even be required.
+In either case, axis-aligned bounding boxes can be used for broadphase
+collision/intersection checking before more fine-grained, but
+computationally more expensive tests are executed. 
+
+![](media/fully-oriented-bounding-box.png)

@@ -14,6 +14,9 @@
 #include "processPointClouds.cpp"  // using templates for processPointClouds so also include .cpp to help linker
 
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "ConstantConditions"
+
 std::vector<Car> initHighway(bool renderScene, pcl::visualization::PCLVisualizer::Ptr &viewer) {
 
     constexpr auto green = Color{0.365, 0.788, 0.290};
@@ -44,7 +47,10 @@ void simpleHighway(pcl::visualization::PCLVisualizer::Ptr &viewer) {
     // ----------------------------------------------------
 
     // RENDER OPTIONS
-    bool renderScene = false;  // if false, only the point cloud is rendered
+    const auto renderScene = false;  // if false, only the point cloud is rendered
+    const auto renderClusters = true;
+    const auto renderBoxes = true;
+
     std::vector<Car> cars = initHighway(renderScene, viewer);
 
     // Initialize LiDAR.
@@ -80,13 +86,19 @@ void simpleHighway(pcl::visualization::PCLVisualizer::Ptr &viewer) {
     {
         const auto& clusterColor = colors[clusterId];
 
-        std::cout << "cluster size ";
-        pointProcessor->numPoints(cluster);
-        renderPointCloud(viewer,cluster,"obstacles"+std::to_string(clusterId), clusterColor);
-        ++clusterId;
+        if (renderClusters) {
+            std::cout << "cluster size ";
+            pointProcessor->numPoints(cluster);
+            renderPointCloud(viewer, cluster, "obstacles" + std::to_string(clusterId), clusterColor);
+        }
 
-        const auto box = pointProcessor->BoundingBox(cluster);
-        renderBox(viewer, box, clusterId, clusterColor);
+        if (renderBoxes) {
+            // const auto box = pointProcessor->BoundingBoxAxisAligned(cluster);
+            const auto box = pointProcessor->BoundingBoxOriented(cluster);
+            renderBox(viewer, box, clusterId, clusterColor);
+        }
+
+        ++clusterId;
     }
 }
 
@@ -133,3 +145,5 @@ int main(int argc, char **argv) {
         viewer->spinOnce();
     }
 }
+
+#pragma clang diagnostic pop
