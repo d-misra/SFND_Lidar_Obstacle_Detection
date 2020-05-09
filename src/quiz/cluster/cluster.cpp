@@ -3,6 +3,7 @@
 
 #include <chrono>
 #include <string>
+#include <unordered_set>
 
 #include "../../render/render.h"
 #include "../../render/box.h"
@@ -72,10 +73,39 @@ render2DTree(const std::unique_ptr<Node>& node, pcl::visualization::PCLVisualize
 
 std::vector<std::vector<int>>
 euclideanCluster(const std::vector<std::vector<float>> &points, KdTree *tree, float distanceTol) {
-
-    // TODO: Fill out this function to return list of indices for each cluster
-
     std::vector<std::vector<int>> clusters;
+
+    // Walk through all nodes, skipping already processed ones.
+    // For each new, unprocessed node we form a new cluster.
+    std::vector<bool> processed(points.size(), false);
+    for (auto seedIndex = 0; seedIndex < points.size(); ++seedIndex) {
+        if (processed[seedIndex]) continue;
+
+        std::vector<int> cluster{};
+
+        // Boundary to explore nodes at that are candidates for the cluster
+        std::queue<int> boundary{};
+        boundary.push(seedIndex);
+
+        while (!boundary.empty()) {
+            const auto pointIndex = boundary.front();
+            boundary.pop();
+
+            if (processed[pointIndex]) {
+                continue;
+            }
+
+            processed[pointIndex] = true;
+            cluster.push_back(pointIndex);
+
+            const auto nearest = tree->search(points[pointIndex], distanceTol);
+            for (const auto& neighborIndex : nearest) {
+                boundary.push(neighborIndex);
+            }
+        }
+
+        clusters.push_back(cluster);
+    }
 
     return clusters;
 }
@@ -125,7 +155,7 @@ int main() {
     // Time segmentation process
     auto startTime = std::chrono::steady_clock::now();
     //
-    std::vector<std::vector<int>> clusters = euclideanCluster(points, tree, 3.0);
+    const auto clusters = euclideanCluster(points, tree, 3.0);
     //
     auto endTime = std::chrono::steady_clock::now();
     auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
