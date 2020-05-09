@@ -1,10 +1,12 @@
 /* \author Aaron Brown */
 // Quiz on implementing simple RANSAC line fitting
 
-#include "../../render/render.h"
-#include "../../render/box.h"
 #include <chrono>
 #include <string>
+
+#include "../../render/render.h"
+#include "../../render/box.h"
+
 #include "kdtree.h"
 
 // Arguments:
@@ -12,65 +14,60 @@
 // increase zoom to see more of the area
 pcl::visualization::PCLVisualizer::Ptr initScene(Box window, int zoom) {
     pcl::visualization::PCLVisualizer::Ptr viewer(new pcl::visualization::PCLVisualizer("2D Viewer"));
-    viewer->setBackgroundColor(0, 0, 0);
+    viewer->setBackgroundColor(0.133, 0.133, 0.133);
     viewer->initCameraParameters();
     viewer->setCameraPosition(0, 0, zoom, 0, 1, 0);
     viewer->addCoordinateSystem(1.0);
 
-    viewer->addCube(window.x_min, window.x_max, window.y_min, window.y_max, 0, 0, 1, 1, 1, "window");
+    viewer->addCube(window.x_min, window.x_max, window.y_min, window.y_max, 0, 0, 0.200, 0.200, 0.200, "window");
     return viewer;
 }
 
-pcl::PointCloud<pcl::PointXYZ>::Ptr CreateData(std::vector<std::vector<float>> points) {
+pcl::PointCloud<pcl::PointXYZ>::Ptr CreateData(const std::vector<std::vector<float>>& points) {
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
 
-    for (int i = 0; i < points.size(); i++) {
+    for (const auto &pt : points) {
         pcl::PointXYZ point;
-        point.x = points[i][0];
-        point.y = points[i][1];
+        point.x = pt[0];
+        point.y = pt[1];
         point.z = 0;
 
         cloud->points.push_back(point);
-
     }
+
     cloud->width = cloud->points.size();
     cloud->height = 1;
 
     return cloud;
-
 }
 
 
 void
-render2DTree(Node *node, pcl::visualization::PCLVisualizer::Ptr &viewer, Box window, int &iteration, uint depth = 0) {
+render2DTree(const std::unique_ptr<Node>& node, pcl::visualization::PCLVisualizer::Ptr &viewer, Box window, int &iteration, uint depth = 0) {
+    if (node == nullptr) return;
 
-    if (node != NULL) {
-        Box upperWindow = window;
-        Box lowerWindow = window;
-        // split on x axis
-        if (depth % 2 == 0) {
-            viewer->addLine(pcl::PointXYZ(node->point[0], window.y_min, 0),
-                            pcl::PointXYZ(node->point[0], window.y_max, 0), 0, 0, 1,
-                            "line" + std::to_string(iteration));
-            lowerWindow.x_max = node->point[0];
-            upperWindow.x_min = node->point[0];
-        }
-            // split on y axis
-        else {
-            viewer->addLine(pcl::PointXYZ(window.x_min, node->point[1], 0),
-                            pcl::PointXYZ(window.x_max, node->point[1], 0), 1, 0, 0,
-                            "line" + std::to_string(iteration));
-            lowerWindow.y_max = node->point[1];
-            upperWindow.y_min = node->point[1];
-        }
-        iteration++;
-
-        render2DTree(node->left, viewer, lowerWindow, iteration, depth + 1);
-        render2DTree(node->right, viewer, upperWindow, iteration, depth + 1);
-
-
+    Box upperWindow = window;
+    Box lowerWindow = window;
+    // split on x axis
+    if (depth % 2 == 0) {
+        viewer->addLine(pcl::PointXYZ(node->point[0], window.y_min, 0),
+                        pcl::PointXYZ(node->point[0], window.y_max, 0), 0, 0, 1,
+                        "line" + std::to_string(iteration));
+        lowerWindow.x_max = node->point[0];
+        upperWindow.x_min = node->point[0];
     }
+        // split on y axis
+    else {
+        viewer->addLine(pcl::PointXYZ(window.x_min, node->point[1], 0),
+                        pcl::PointXYZ(window.x_max, node->point[1], 0), 1, 0, 0,
+                        "line" + std::to_string(iteration));
+        lowerWindow.y_max = node->point[1];
+        upperWindow.y_min = node->point[1];
+    }
+    ++iteration;
 
+    render2DTree(node->left, viewer, lowerWindow, iteration, depth + 1);
+    render2DTree(node->right, viewer, upperWindow, iteration, depth + 1);
 }
 
 std::vector<std::vector<int>>
@@ -81,13 +78,12 @@ euclideanCluster(const std::vector<std::vector<float>> &points, KdTree *tree, fl
     std::vector<std::vector<int>> clusters;
 
     return clusters;
-
 }
 
 int main() {
 
     // Create viewer
-    Box window;
+    Box window{};
     window.x_min = -10;
     window.x_max = 10;
     window.y_min = -10;
@@ -109,12 +105,13 @@ int main() {
                                               {-1.2, -7.2},
                                               {2.2,  -8.9}};
     //std::vector<std::vector<float>> points = { {-6.2,7}, {-6.3,8.4}, {-5.2,7.1}, {-5.7,6.3} };
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = CreateData(points);
+    const auto cloud = CreateData(points);
 
-    KdTree *tree = new KdTree;
+    auto tree = new KdTree();
 
-    for (int i = 0; i < points.size(); i++)
+    for (int i = 0; i < points.size(); i++) {
         tree->insert(points[i], i);
+    }
 
     int it = 0;
     render2DTree(tree->root, viewer, window, it);
@@ -137,16 +134,23 @@ int main() {
 
     // Render clusters
     int clusterId = 0;
-    std::vector<Color> colors = {Color(1, 0, 0), Color(0, 1, 0), Color(0, 0, 1)};
-    for (std::vector<int> cluster : clusters) {
+    std::vector<Color> colors = {
+            Color(1.000,0.548,0.492),
+            Color(0.953,0.792,1.000),
+            Color(0.590,1.000,0.907)};
+
+    for (const auto& cluster : clusters) {
         pcl::PointCloud<pcl::PointXYZ>::Ptr clusterCloud(new pcl::PointCloud<pcl::PointXYZ>());
-        for (int indice: cluster)
-            clusterCloud->points.push_back(pcl::PointXYZ(points[indice][0], points[indice][1], 0));
+        for (auto index: cluster) {
+            clusterCloud->points.emplace_back(points[index][0], points[index][1], 0);
+        }
         renderPointCloud(viewer, clusterCloud, "cluster" + std::to_string(clusterId), colors[clusterId % 3]);
         ++clusterId;
     }
-    if (clusters.size() == 0)
+
+    if (clusters.empty()) {
         renderPointCloud(viewer, cloud, "data");
+    }
 
     while (!viewer->wasStopped()) {
         viewer->spinOnce();
