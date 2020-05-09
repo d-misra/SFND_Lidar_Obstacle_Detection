@@ -183,10 +183,20 @@ BoxQ ProcessPointClouds<PointT>::BoundingBoxOriented(typename pcl::PointCloud<Po
 
     BoxQ box{};
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloudPCAprojection (new pcl::PointCloud<pcl::PointXYZ>);
+    // This block is debatable, but makes sense for street-bound cars (i.e., non-flying ones ...)
+    // It suppresses the Z coordinate and forces the PCA to see X/Y extents only.
+    // This, in turn, results in bounding boxes that are oriented in Z plane but aligned with XY and YZ.
+    // TODO: Maybe there is a smarter way to do this; the copy isn't particularly fun.
+    pcl::PointCloud<pcl::PointXYZ>::Ptr clusterXY{new pcl::PointCloud<pcl::PointXYZ>};
+    pcl::copyPointCloud(*cluster, *clusterXY);
+    for (auto& pt : clusterXY->points) {
+        pt.z = 0;
+    }
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr pcaProjection (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PCA<pcl::PointXYZ> pca;
-    pca.setInputCloud(cluster);
-    pca.project(*cluster, *cloudPCAprojection);
+    pca.setInputCloud(clusterXY);
+    pca.project(*cluster, *pcaProjection);
 
     const auto centroid = pca.getMean();
     const auto eigenvectors = pca.getEigenVectors();
