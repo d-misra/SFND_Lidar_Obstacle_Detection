@@ -112,3 +112,9 @@ collision/intersection checking before more fine-grained, but
 computationally more expensive tests are executed. 
 
 ![](media/fully-oriented-bounding-box.png)
+
+Limiting the PCA to only observe the X and Y components, we can generate
+bounding boxes that are oriented on the Z plane, but axis aligned with
+XY and YZ.
+
+![](media/z-oriented-bounding-box.webp)
