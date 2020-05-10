@@ -133,7 +133,7 @@ ProcessPointClouds<PointT>::SegmentPlane(typename pcl::PointCloud<PointT>::Ptr c
     seg.setInputCloud(cloud);
     seg.segment(*inliers, *coefficients);
     if (inliers->indices.empty()) {
-        std::cerr << "Could not estimate planar model for the given point cloude." << std::endl;
+        std::cerr << "Could not estimate planar model for the given point cloud." << std::endl;
     }
 
     // Separate the result into inliers and outliers.
