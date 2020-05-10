@@ -194,7 +194,7 @@ int main(int argc, char **argv) {
     }
 #else
     const auto pointProcessor = std::make_unique<ProcessPointClouds<pcl::PointXYZI>>();
-    const auto paths = pointProcessor->streamPcd("src/sensors/data/pcd/data_1");
+    const auto paths = pointProcessor->streamPcd("src/sensors/data/pcd/data_2");
     auto streamIterator = paths.begin();
 
     while (!viewer->wasStopped()) {
