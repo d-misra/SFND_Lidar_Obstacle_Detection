@@ -103,6 +103,14 @@ void simpleHighway(pcl::visualization::PCLVisualizer::Ptr &viewer) {
 }
 
 
+void cityBlock(pcl::visualization::PCLVisualizer::Ptr &viewer) {
+    const auto pointProcessor = std::make_unique<ProcessPointClouds<pcl::PointXYZI>>();
+
+    pcl::PointCloud<pcl::PointXYZI>::Ptr inputCloud = pointProcessor->loadPcd("src/sensors/data/pcd/data_1/0000000000.pcd");
+    renderPointCloud(viewer, inputCloud, "inputCloud");
+}
+
+
 //setAngle: SWITCH CAMERA ANGLE {XY, TopDown, Side, FPS}
 void initCamera(CameraAngle setAngle, pcl::visualization::PCLVisualizer::Ptr &viewer) {
 
@@ -139,7 +147,12 @@ int main(int argc, char **argv) {
 
     CameraAngle setAngle = XY;
     initCamera(setAngle, viewer);
+
+#ifdef SIMPLE_HIGHWAY
     simpleHighway(viewer);
+#else
+    cityBlock(viewer);
+#endif
 
     while (!viewer->wasStopped()) {
         viewer->spinOnce();

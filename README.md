@@ -57,10 +57,14 @@ make
 You can then run the simulator from the `environment` binary:
 
 ```bash
-./environment
+cd ..
+build/environment
 ```
 
-## The code
+Note that the project contains hard-coded paths (yes, I know ...)
+to the PCD files, so running it from the repo's root directory is crucial.
+
+## A Simple Highway
 
 Initially, the simulated LiDAR sensor was updated to have a higher
 horizontal and vertical resolution, as well as some measurement noise.
