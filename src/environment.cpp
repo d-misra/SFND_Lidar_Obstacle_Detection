@@ -87,7 +87,7 @@ void simpleHighway(pcl::visualization::PCLVisualizer::Ptr &viewer) {
 
         if (renderClusters) {
             std::cout << "cluster size ";
-            pointProcessor->numPoints(cluster);
+            pointProcessor->printNumPoints(cluster);
             renderPointCloud(viewer, cluster, "obstacles" + std::to_string(clusterId), clusterColor);
         }
 
@@ -102,28 +102,25 @@ void simpleHighway(pcl::visualization::PCLVisualizer::Ptr &viewer) {
 }
 
 
-void cityBlock(pcl::visualization::PCLVisualizer::Ptr &viewer) {
+void cityBlock(pcl::visualization::PCLVisualizer::Ptr &viewer, const ProcessPointClouds<pcl::PointXYZI> &pointProcessor,
+               const pcl::PointCloud<pcl::PointXYZI>::Ptr &inputCloud) {
     const auto renderClusters = true;
     const auto renderBoxes = true;
-
-    const auto pointProcessor = std::make_unique<ProcessPointClouds<pcl::PointXYZI>>();
-    pcl::PointCloud<pcl::PointXYZI>::Ptr inputCloud = pointProcessor->loadPcd(
-            "src/sensors/data/pcd/data_1/0000000000.pcd");
 
     const auto filterRes = 0.2f;
     const Eigen::Vector4f minPoint{-10.f, -5.f, -2.f, 1.f};
     const Eigen::Vector4f maxPoint{30.f, 7.f, 1.f, 1.f};
-    const auto filteredCloud = pointProcessor->FilterCloud(inputCloud, filterRes, minPoint, maxPoint);
+    const auto filteredCloud = pointProcessor.FilterCloud(inputCloud, filterRes, minPoint, maxPoint);
 
     const auto maxIterations = 100;
     const auto distanceTolerance = 0.2F;
-    const auto[planeCloud, obstacleCloud] = pointProcessor->SegmentPlane(filteredCloud, maxIterations,
+    const auto[planeCloud, obstacleCloud] = pointProcessor.SegmentPlane(filteredCloud, maxIterations,
                                                                          distanceTolerance);
 
     renderPointCloud(viewer, planeCloud, "plane", Color{0.623, 0.609, 0.591});
 
     // Cluster the obstacles
-    const auto cloudClusters = pointProcessor->Clustering(obstacleCloud, 0.4, 10, 1000);
+    const auto cloudClusters = pointProcessor.Clustering(obstacleCloud, 0.5, 10, 1000);
 
     // Cycle through the colors ... all three of them.
     int clusterId = 0;
@@ -137,13 +134,13 @@ void cityBlock(pcl::visualization::PCLVisualizer::Ptr &viewer) {
 
         if (renderClusters) {
             std::cout << "cluster size ";
-            pointProcessor->numPoints(cluster);
+            pointProcessor.printNumPoints(cluster);
             renderPointCloud(viewer, cluster, "obstacles" + std::to_string(clusterId), clusterColor);
         }
 
         if (renderBoxes) {
             // const auto box = pointProcessor->BoundingBoxAxisAligned(cluster);
-            const auto box = pointProcessor->BoundingBoxOriented(cluster);
+            const auto box = pointProcessor.BoundingBoxOriented(cluster);
             renderBox(viewer, box, clusterId, clusterColor);
         }
 
@@ -191,13 +188,32 @@ int main(int argc, char **argv) {
 
 #ifdef SIMPLE_HIGHWAY
     simpleHighway(viewer);
-#else
-    cityBlock(viewer);
-#endif
 
     while (!viewer->wasStopped()) {
         viewer->spinOnce();
     }
+#else
+    const auto pointProcessor = std::make_unique<ProcessPointClouds<pcl::PointXYZI>>();
+    const auto paths = pointProcessor->streamPcd("src/sensors/data/pcd/data_1");
+    auto streamIterator = paths.begin();
+
+    while (!viewer->wasStopped()) {
+        // Clear the viewer.
+        viewer->removeAllPointClouds();
+        viewer->removeAllShapes();
+
+        // Load pcd and run obstacle detection process
+        const auto inputCloud = pointProcessor->loadPcd((*streamIterator).string());
+        cityBlock(viewer, *pointProcessor, inputCloud);
+
+        streamIterator++;
+        if (streamIterator == paths.end()) {
+            streamIterator = paths.begin();
+        }
+
+        viewer->spinOnce(30);
+    }
+#endif
 }
 
 #pragma clang diagnostic pop

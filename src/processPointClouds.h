@@ -23,30 +23,30 @@ template<typename PointT>
 class ProcessPointClouds {
 public:
 
-    //constructor
+    // constructor
     ProcessPointClouds();
 
-    //deconstructor
+    // destructor
     ~ProcessPointClouds();
 
-    void numPoints(typename pcl::PointCloud<PointT>::Ptr cloud);
+    void printNumPoints(typename pcl::PointCloud<PointT>::Ptr cloud) const;
 
     typename pcl::PointCloud<PointT>::Ptr
     FilterCloud(typename pcl::PointCloud<PointT>::Ptr cloud, float filterRes, Eigen::Vector4f minPoint,
-                Eigen::Vector4f maxPoint);
+                Eigen::Vector4f maxPoint) const;
 
     std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr>
-    SeparateClouds(const pcl::PointIndices::Ptr &inliers, typename pcl::PointCloud<PointT>::Ptr cloud);
+    SeparateClouds(const pcl::PointIndices::Ptr &inliers, typename pcl::PointCloud<PointT>::Ptr cloud) const;
 
     std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr>
-    SegmentPlane(typename pcl::PointCloud<PointT>::Ptr cloud, int maxIterations, float distanceThreshold);
+    SegmentPlane(typename pcl::PointCloud<PointT>::Ptr cloud, int maxIterations, float distanceThreshold) const;
 
     std::vector<typename pcl::PointCloud<PointT>::Ptr>
-    Clustering(typename pcl::PointCloud<PointT>::Ptr cloud, float clusterTolerance, int minSize, int maxSize);
+    Clustering(typename pcl::PointCloud<PointT>::Ptr cloud, float clusterTolerance, int minSize, int maxSize) const;
 
-    Box BoundingBoxAxisAligned(typename pcl::PointCloud<PointT>::Ptr cluster);
+    Box BoundingBoxAxisAligned(typename pcl::PointCloud<PointT>::Ptr cluster) const;
 
-    BoxQ BoundingBoxOriented(typename pcl::PointCloud<PointT>::Ptr cluster);
+    BoxQ BoundingBoxOriented(typename pcl::PointCloud<PointT>::Ptr cluster) const;
 
     void savePcd(typename pcl::PointCloud<PointT>::Ptr cloud, std::string file);
 

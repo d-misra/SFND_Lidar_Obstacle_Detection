@@ -15,7 +15,7 @@ ProcessPointClouds<PointT>::~ProcessPointClouds() {}
 
 
 template<typename PointT>
-void ProcessPointClouds<PointT>::numPoints(typename pcl::PointCloud<PointT>::Ptr cloud) {
+void ProcessPointClouds<PointT>::printNumPoints(typename pcl::PointCloud<PointT>::Ptr cloud) const {
     std::cout << cloud->points.size() << std::endl;
 }
 
@@ -23,7 +23,7 @@ void ProcessPointClouds<PointT>::numPoints(typename pcl::PointCloud<PointT>::Ptr
 template<typename PointT>
 typename pcl::PointCloud<PointT>::Ptr
 ProcessPointClouds<PointT>::FilterCloud(typename pcl::PointCloud<PointT>::Ptr cloud, float filterRes,
-                                        Eigen::Vector4f minPoint, Eigen::Vector4f maxPoint) {
+                                        Eigen::Vector4f minPoint, Eigen::Vector4f maxPoint) const {
 
     // Time segmentation process
     auto startTime = std::chrono::steady_clock::now();
@@ -76,7 +76,7 @@ ProcessPointClouds<PointT>::FilterCloud(typename pcl::PointCloud<PointT>::Ptr cl
 template<typename PointT>
 std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr>
 ProcessPointClouds<PointT>::SeparateClouds(const pcl::PointIndices::Ptr &inliers,
-                                           typename pcl::PointCloud<PointT>::Ptr cloud) {
+                                           typename pcl::PointCloud<PointT>::Ptr cloud) const {
 
     typename pcl::PointCloud<PointT>::Ptr planeCloud{new pcl::PointCloud<PointT>};
     typename pcl::PointCloud<PointT>::Ptr obstacleCloud{new pcl::PointCloud<PointT>};
@@ -109,7 +109,7 @@ ProcessPointClouds<PointT>::SeparateClouds(const pcl::PointIndices::Ptr &inliers
 template<typename PointT>
 std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr>
 ProcessPointClouds<PointT>::SegmentPlane(typename pcl::PointCloud<PointT>::Ptr cloud,
-                                         int maxIterations, float distanceThreshold) {
+                                         int maxIterations, float distanceThreshold) const {
 
     // Time segmentation process
     auto startTime = std::chrono::steady_clock::now();
@@ -150,7 +150,7 @@ ProcessPointClouds<PointT>::SegmentPlane(typename pcl::PointCloud<PointT>::Ptr c
 template<typename PointT>
 std::vector<typename pcl::PointCloud<PointT>::Ptr>
 ProcessPointClouds<PointT>::Clustering(typename pcl::PointCloud<PointT>::Ptr cloud, float clusterTolerance, int minSize,
-                                       int maxSize) {
+                                       int maxSize) const {
 
     // Time clustering process
     const auto startTime = std::chrono::steady_clock::now();
@@ -195,7 +195,7 @@ ProcessPointClouds<PointT>::Clustering(typename pcl::PointCloud<PointT>::Ptr clo
 
 
 template<typename PointT>
-Box ProcessPointClouds<PointT>::BoundingBoxAxisAligned(typename pcl::PointCloud<PointT>::Ptr cluster) {
+Box ProcessPointClouds<PointT>::BoundingBoxAxisAligned(typename pcl::PointCloud<PointT>::Ptr cluster) const {
 
     // Find bounding box for one of the clusters
     PointT minPoint, maxPoint;
@@ -213,7 +213,7 @@ Box ProcessPointClouds<PointT>::BoundingBoxAxisAligned(typename pcl::PointCloud<
 }
 
 template<typename PointT>
-BoxQ ProcessPointClouds<PointT>::BoundingBoxOriented(typename pcl::PointCloud<PointT>::Ptr cluster) {
+BoxQ ProcessPointClouds<PointT>::BoundingBoxOriented(typename pcl::PointCloud<PointT>::Ptr cluster) const {
     // See: http://codextechnicanum.blogspot.com/2015/04/find-minimum-oriented-bounding-box-of.html
 
     BoxQ box{};
