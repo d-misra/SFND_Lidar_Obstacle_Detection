@@ -123,7 +123,7 @@ void cityBlock(pcl::visualization::PCLVisualizer::Ptr &viewer) {
     renderPointCloud(viewer, planeCloud, "plane", Color{0.623, 0.609, 0.591});
 
     // Cluster the obstacles
-    const auto cloudClusters = pointProcessor->Clustering(obstacleCloud, 0.3, 10, 1000);
+    const auto cloudClusters = pointProcessor->Clustering(obstacleCloud, 0.4, 10, 1000);
 
     // Cycle through the colors ... all three of them.
     int clusterId = 0;
