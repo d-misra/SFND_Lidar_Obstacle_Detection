@@ -107,7 +107,12 @@ void cityBlock(pcl::visualization::PCLVisualizer::Ptr &viewer) {
     const auto pointProcessor = std::make_unique<ProcessPointClouds<pcl::PointXYZI>>();
 
     pcl::PointCloud<pcl::PointXYZI>::Ptr inputCloud = pointProcessor->loadPcd("src/sensors/data/pcd/data_1/0000000000.pcd");
-    renderPointCloud(viewer, inputCloud, "inputCloud");
+
+    const auto filterRes = 0.2f;
+    const Eigen::Vector4f minPoint{-10.f, -5.f, -2.f, 1.f};
+    const Eigen::Vector4f maxPoint{30.f, 7.f, 1.f, 1.f};
+    const auto filteredCloud = pointProcessor->FilterCloud(inputCloud, filterRes, minPoint, maxPoint);
+    renderPointCloud(viewer, filteredCloud, "filteredCloud");
 }
 
 
