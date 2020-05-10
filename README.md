@@ -57,10 +57,14 @@ make
 You can then run the simulator from the `environment` binary:
 
 ```bash
-./environment
+cd ..
+build/environment
 ```
 
-## The code
+Note that the project contains hard-coded paths (yes, I know ...)
+to the PCD files, so running it from the repo's root directory is crucial.
+
+## A Simple Highway
 
 Initially, the simulated LiDAR sensor was updated to have a higher
 horizontal and vertical resolution, as well as some measurement noise.
@@ -118,3 +122,21 @@ bounding boxes that are oriented on the Z plane, but axis aligned with
 XY and YZ.
 
 ![](media/z-oriented-bounding-box.webp)
+
+## Real Point Clouds
+
+So far, only a virtual environment was sampled using a virtual LiDAR.
+To step it up, real point-cloud data taken from an actual car driving
+in traffic was loaded from a PCD file.
+
+![](media/real-pcd.png)
+
+After subsampling the point cloud using voxels of 0.2 m edge length,
+as well as reducing the field of view to only include some 30 m ahead,
+10 m behin, 7 m left and 5 m right of the ego car, the above techniques
+were applied again, producing in the following outcome:
+
+![](media/real-pcd-obb.png)
+
+Note that the bounding boxes are oriented on the Z plane again and that
+one truck was artificially split into two clusters. 
