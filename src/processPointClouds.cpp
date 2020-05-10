@@ -149,43 +149,44 @@ ProcessPointClouds<PointT>::SegmentPlane(typename pcl::PointCloud<PointT>::Ptr c
 
 template<typename PointT>
 std::vector<typename pcl::PointCloud<PointT>::Ptr>
-ProcessPointClouds<PointT>::Clustering(typename pcl::PointCloud<PointT>::Ptr cloud, float clusterTolerance, int minSize, int maxSize) {
+ProcessPointClouds<PointT>::Clustering(typename pcl::PointCloud<PointT>::Ptr cloud, float clusterTolerance, int minSize,
+                                       int maxSize) {
 
     // Time clustering process
-    auto startTime = std::chrono::steady_clock::now();
+    const auto startTime = std::chrono::steady_clock::now();
 
     std::vector<typename pcl::PointCloud<PointT>::Ptr> clusters;
 
     // Creating the KdTree object for the search method of the extraction.
-    pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
+    typename pcl::search::KdTree<PointT>::Ptr tree(new pcl::search::KdTree<PointT>);
     tree->setInputCloud(cloud);
 
     // Create the cluster extraction object.
-    std::vector<pcl::PointIndices> cluster_indices;
-    pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
+    std::vector<pcl::PointIndices> clusterIndices;
+    pcl::EuclideanClusterExtraction<PointT> ec;
     ec.setClusterTolerance(clusterTolerance);
     ec.setMinClusterSize(minSize);
     ec.setMaxClusterSize(maxSize);
     ec.setSearchMethod(tree);
     ec.setInputCloud(cloud);
-    ec.extract(cluster_indices);
+    ec.extract(clusterIndices);
 
     // Create a new cloud per cluster.
-    for (auto it = cluster_indices.begin(); it != cluster_indices.end(); ++it) {
-        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster(new pcl::PointCloud<pcl::PointXYZ>);
+    for (const auto &clusterIndex : clusterIndices) {
+        typename pcl::PointCloud<PointT>::Ptr cloud_cluster(new pcl::PointCloud<PointT>);
         cloud_cluster->width = cloud_cluster->points.size();
         cloud_cluster->height = 1;
         cloud_cluster->is_dense = true;
 
-        for (auto pit = it->indices.begin(); pit != it->indices.end(); ++pit) {
-            cloud_cluster->points.push_back(cloud->points[*pit]);
+        for (const auto& index : clusterIndex.indices) {
+            cloud_cluster->points.push_back(cloud->points[index]);
         }
 
         clusters.push_back(std::move(cloud_cluster));
     }
 
-    auto endTime = std::chrono::steady_clock::now();
-    auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+    const auto endTime = std::chrono::steady_clock::now();
+    const auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
     std::cout << "clustering took " << elapsedTime.count() << " milliseconds and found " << clusters.size()
               << " clusters" << std::endl;
 
@@ -223,11 +224,11 @@ BoxQ ProcessPointClouds<PointT>::BoundingBoxOriented(typename pcl::PointCloud<Po
     // TODO: Maybe there is a smarter way to do this; the copy isn't particularly fun.
     pcl::PointCloud<pcl::PointXYZ>::Ptr clusterXY{new pcl::PointCloud<pcl::PointXYZ>};
     pcl::copyPointCloud(*cluster, *clusterXY);
-    for (auto& pt : clusterXY->points) {
+    for (auto &pt : clusterXY->points) {
         pt.z = 0;
     }
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr pcaProjection (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr pcaProjection(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PCA<pcl::PointXYZ> pca;
     pca.setInputCloud(clusterXY);
     pca.project(*cluster, *pcaProjection);
@@ -237,8 +238,8 @@ BoxQ ProcessPointClouds<PointT>::BoundingBoxOriented(typename pcl::PointCloud<Po
 
     // Construct transformation matrix.
     Eigen::Matrix4f projectionTransform{Eigen::Matrix4f::Identity()};
-    projectionTransform.block<3,3>(0,0) = eigenvectors.transpose();
-    projectionTransform.block<3,1>(0,3) = -1.f * (projectionTransform.block<3,3>(0,0) * centroid.head<3>());
+    projectionTransform.block<3, 3>(0, 0) = eigenvectors.transpose();
+    projectionTransform.block<3, 1>(0, 3) = -1.f * (projectionTransform.block<3, 3>(0, 0) * centroid.head<3>());
 
     // Project point cloud to normalized space.
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloudPointsProjected{new pcl::PointCloud<pcl::PointXYZ>};
@@ -247,7 +248,7 @@ BoxQ ProcessPointClouds<PointT>::BoundingBoxOriented(typename pcl::PointCloud<Po
     // Get the minimum and maximum points of the transformed cloud.
     pcl::PointXYZ minPoint, maxPoint;
     pcl::getMinMax3D(*cloudPointsProjected, minPoint, maxPoint);
-    const Eigen::Vector3f meanDiagonal = 0.5f*(maxPoint.getVector3fMap() + minPoint.getVector3fMap());
+    const Eigen::Vector3f meanDiagonal = 0.5f * (maxPoint.getVector3fMap() + minPoint.getVector3fMap());
 
     box.bboxQuaternion = Eigen::Quaternionf{eigenvectors};
     box.bboxTransform = eigenvectors * meanDiagonal + centroid.head<3>();
