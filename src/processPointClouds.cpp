@@ -1,17 +1,18 @@
 // PCL lib Functions for processing point clouds
 
 #include <pcl/common/pca.h>
+#include "quiz/ransac/ransac2d.h"
 #include "processPointClouds.h"
 
 
 //constructor:
 template<typename PointT>
-ProcessPointClouds<PointT>::ProcessPointClouds() {}
+ProcessPointClouds<PointT>::ProcessPointClouds() = default;
 
 
 //de-constructor:
 template<typename PointT>
-ProcessPointClouds<PointT>::~ProcessPointClouds() {}
+ProcessPointClouds<PointT>::~ProcessPointClouds() = default;
 
 
 template<typename PointT>

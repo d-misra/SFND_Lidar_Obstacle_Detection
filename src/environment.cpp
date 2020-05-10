@@ -120,7 +120,7 @@ void cityBlock(pcl::visualization::PCLVisualizer::Ptr &viewer, const ProcessPoin
     renderPointCloud(viewer, planeCloud, "plane", Color{0.623, 0.609, 0.591});
 
     // Cluster the obstacles
-    const auto cloudClusters = pointProcessor.Clustering(obstacleCloud, 0.5, 10, 1000);
+    const auto cloudClusters = pointProcessor.Clustering(obstacleCloud, 0.4, 10, 1000);
 
     // Cycle through the colors ... all three of them.
     int clusterId = 0;
@@ -194,7 +194,7 @@ int main(int argc, char **argv) {
     }
 #else
     const auto pointProcessor = std::make_unique<ProcessPointClouds<pcl::PointXYZI>>();
-    const auto paths = pointProcessor->streamPcd("src/sensors/data/pcd/data_2");
+    const auto paths = pointProcessor->streamPcd("src/sensors/data/pcd/data_1");
     auto streamIterator = paths.begin();
 
     while (!viewer->wasStopped()) {
