@@ -231,7 +231,7 @@ BoxQ ProcessPointClouds<PointT>::BoundingBoxOriented(typename pcl::PointCloud<Po
     pcl::PointCloud<pcl::PointXYZ>::Ptr pcaProjection(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PCA<pcl::PointXYZ> pca;
     pca.setInputCloud(clusterXY);
-    pca.project(*cluster, *pcaProjection);
+    pca.project(*clusterXY, *pcaProjection);
 
     const auto centroid = pca.getMean();
     const auto eigenvectors = pca.getEigenVectors();
@@ -242,11 +242,11 @@ BoxQ ProcessPointClouds<PointT>::BoundingBoxOriented(typename pcl::PointCloud<Po
     projectionTransform.block<3, 1>(0, 3) = -1.f * (projectionTransform.block<3, 3>(0, 0) * centroid.head<3>());
 
     // Project point cloud to normalized space.
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloudPointsProjected{new pcl::PointCloud<pcl::PointXYZ>};
+    typename pcl::PointCloud<PointT>::Ptr cloudPointsProjected{new pcl::PointCloud<PointT>};
     pcl::transformPointCloud(*cluster, *cloudPointsProjected, projectionTransform);
 
     // Get the minimum and maximum points of the transformed cloud.
-    pcl::PointXYZ minPoint, maxPoint;
+    PointT minPoint, maxPoint;
     pcl::getMinMax3D(*cloudPointsProjected, minPoint, maxPoint);
     const Eigen::Vector3f meanDiagonal = 0.5f * (maxPoint.getVector3fMap() + minPoint.getVector3fMap());
 

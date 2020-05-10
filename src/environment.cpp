@@ -141,13 +141,11 @@ void cityBlock(pcl::visualization::PCLVisualizer::Ptr &viewer) {
             renderPointCloud(viewer, cluster, "obstacles" + std::to_string(clusterId), clusterColor);
         }
 
-        /*
         if (renderBoxes) {
             // const auto box = pointProcessor->BoundingBoxAxisAligned(cluster);
             const auto box = pointProcessor->BoundingBoxOriented(cluster);
             renderBox(viewer, box, clusterId, clusterColor);
         }
-        */
 
         ++clusterId;
     }
