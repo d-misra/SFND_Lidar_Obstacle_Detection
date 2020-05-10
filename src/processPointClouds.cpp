@@ -1,18 +1,82 @@
 // PCL lib Functions for processing point clouds
 
 #include <pcl/common/pca.h>
-#include "quiz/ransac/ransac2d.h"
 #include "processPointClouds.h"
+#include "render/render.h"
 
-
-//constructor:
 template<typename PointT>
-ProcessPointClouds<PointT>::ProcessPointClouds() = default;
+pcl::PointIndices::Ptr
+ProcessPointClouds<PointT>::RansacPlane(typename pcl::PointCloud<PointT>::Ptr cloud, int maxIterations, float distanceTol) const {
+    std::unordered_set<std::size_t> inliersResult;
+    srand(time(0));
 
+    const auto numPoints = cloud->points.size();
+    assert(numPoints >= 3); // ... and points are not collinear ...
 
-//de-constructor:
-template<typename PointT>
-ProcessPointClouds<PointT>::~ProcessPointClouds() = default;
+    // For max iterations
+    for (auto i = 0; i < maxIterations; ++i) {
+        // Randomly sample subset and fit a plane.
+        // We're using a set here to ensure we never sample the same point twice.
+        std::unordered_set<std::size_t> inliers;
+        while (inliers.size() < 3) {
+            inliers.insert(rand() % numPoints);
+        }
+
+        // Get all points.
+        auto itr = inliers.begin();
+        const auto &p1 = cloud->points[*itr];
+        itr++;
+        const auto &p2 = cloud->points[*itr];
+        itr++;
+        const auto &p3 = cloud->points[*itr];
+
+        // Determine the plane through three points.
+        const auto v1 = Vect3{p2.x, p2.y, p2.z} - Vect3{p1.x, p1.y, p1.z};
+        const auto v2 = Vect3{p3.x, p3.y, p3.z} - Vect3{p1.x, p1.y, p1.z};
+
+        // Determine plane normal by taking the cross product.
+        const auto normal = v1.cross(v2);
+        const auto normalizer = 1.0 / normal.norm();
+
+        // Plane coefficients
+        const auto A = normal.x;
+        const auto B = normal.y;
+        const auto C = normal.z;
+        const auto D = -(A * p1.x + B * p1.y + C * p1.z);
+
+        // Measure distance between every point and fitted line
+        for (auto j = 0; j < numPoints; ++j) {
+
+            // Skip points we already know are inliers.
+            if (inliers.count(j) > 0) {
+                continue;
+            }
+
+            // Determine the distance of the current point to the line.
+            const auto &pt = cloud->points[j];
+            const auto d = std::abs(A * pt.x + B * pt.y + C * pt.z + D) * normalizer;
+
+            // If distance is smaller than threshold count it as inlier
+            if (d <= distanceTol) {
+                inliers.insert(j);
+            }
+        }
+
+        // Return indices of inliers from fitted line with most inliers.
+        // Specifically, we only keep the result if we found a better answer than
+        // the one we already have.
+        if (inliers.size() > inliersResult.size()) {
+            inliersResult = std::move(inliers);
+        }
+    }
+
+    pcl::PointIndices::Ptr result{new pcl::PointIndices};
+    for (const auto& idx : inliersResult) {
+        result->indices.push_back(idx);
+    }
+
+    return result;
+}
 
 
 template<typename PointT>
@@ -115,6 +179,8 @@ ProcessPointClouds<PointT>::SegmentPlane(typename pcl::PointCloud<PointT>::Ptr c
     // Time segmentation process
     auto startTime = std::chrono::steady_clock::now();
 
+#ifdef PLANE_RANSAC_PCL
+
     // Prepare the (random) sample consensus based point segmentation.
     // See e.g.
     // - https://pcl-tutorials.readthedocs.io/en/master/planar_segmentation.html
@@ -139,6 +205,17 @@ ProcessPointClouds<PointT>::SegmentPlane(typename pcl::PointCloud<PointT>::Ptr c
 
     // Separate the result into inliers and outliers.
     const auto planeAndObstacles = SeparateClouds(inliers, cloud);
+
+#else
+
+    const auto inliers = RansacPlane(cloud, maxIterations, distanceThreshold);
+    if (inliers->indices.empty()) {
+        std::cerr << "Could not estimate planar model for the given point cloud." << std::endl;
+    }
+
+    const auto planeAndObstacles = SeparateClouds(inliers, cloud);
+
+#endif
 
     auto endTime = std::chrono::steady_clock::now();
     auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);

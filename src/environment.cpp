@@ -206,7 +206,7 @@ int main(int argc, char **argv) {
         const auto inputCloud = pointProcessor->loadPcd((*streamIterator).string());
         cityBlock(viewer, *pointProcessor, inputCloud);
 
-        streamIterator++;
+        //streamIterator++;
         if (streamIterator == paths.end()) {
             streamIterator = paths.begin();
         }

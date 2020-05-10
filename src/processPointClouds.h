@@ -17,6 +17,7 @@
 #include <vector>
 #include <ctime>
 #include <chrono>
+#include <unordered_set>
 #include "render/box.h"
 
 template<typename PointT>
@@ -24,10 +25,10 @@ class ProcessPointClouds {
 public:
 
     // constructor
-    ProcessPointClouds();
+    ProcessPointClouds() = default;
 
     // destructor
-    ~ProcessPointClouds();
+    ~ProcessPointClouds() = default;
 
     void printNumPoints(typename pcl::PointCloud<PointT>::Ptr cloud) const;
 
@@ -54,6 +55,10 @@ public:
 
     std::vector<boost::filesystem::path> streamPcd(std::string dataPath);
 
+private:
+
+    pcl::PointIndices::Ptr
+    RansacPlane(typename pcl::PointCloud<PointT>::Ptr cloud, int maxIterations, float distanceTol) const;
 };
 
 #endif /* PROCESSPOINTCLOUDS_H_ */
