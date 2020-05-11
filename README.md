@@ -2,7 +2,7 @@
 
 This project is meant as an introduction to Sensor Fusion for Self-Driving Cars. The main points of it are:
 
-- **Working with Point Cloud Data** using the [Point Cloud Library](https://pointcloudlibrary.github.io/)(PCL), including streaming PCD files,
+- **Working with Point Cloud Data** using the [Point Cloud Library](https://pointcloudlibrary.github.io/) (PCL), including streaming PCD files,
 - Segmenting the road from obstacles by **fitting a plane using RANSAC**,
 - **Clustering non-road points into obstacles** using Euclidean Clustering via Kd-trees,
 - **Fitting oriented bounding boxes** over clustered obstacle points to simplify tracking and collision detection.
