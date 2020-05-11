@@ -3,7 +3,7 @@
 **Warning when cloning:** This repository is pretty heavy because the original creators chose to include
 Point Cloud Data files at [`src/sensors/data/pcd`](src/sensors/data/pcd); these files sum up to about 342 MB.
 
-<img src="media/ObstacleDetectionFPS.gif" width="700" height="400" />
+<img src="media/submission.webp" width="800" height="200" />
 
 ## Welcome to the Sensor Fusion for Self-Driving Cars repo.
 
@@ -46,7 +46,7 @@ sources like so:
 sudo apt install libpcl-dev
 ```
 
-The project itself uses CMake. To build, follow the typical CMake pattern: 
+The project itself uses CMake. To build, follow the typical CMake pattern:
 
 ```bash
 mkdir build && cd build
@@ -87,7 +87,7 @@ Using a sample consensus approach (specifically, RANSAC) the obtained
 point cloud was then separated into two plane and obstacle clodus
 using a planar model.
 
-![](media/point-cloud-separation.webp)
+<img src="media/point-cloud-separation.webp" width="800" height="236" />
 
 In here, red points represent obstacles, while white points represent
 the plane. Note that in the video, the sensor noise was reduced a bit
@@ -121,7 +121,7 @@ Limiting the PCA to only observe the X and Y components, we can generate
 bounding boxes that are oriented on the Z plane, but axis aligned with
 XY and YZ.
 
-![](media/z-oriented-bounding-box.webp)
+<img src="media/z-oriented-bounding-box.webp" width="800" height="200" />
 
 ## Real Point Clouds
 
@@ -139,4 +139,8 @@ were applied again, producing in the following outcome:
 ![](media/real-pcd-obb.png)
 
 Note that the bounding boxes are oriented on the Z plane again and that
-one truck was artificially split into two clusters. 
+one truck was artificially split into two clusters.
+
+A result with axis-aligned bounding boxes (they look much better
+than untreated oriented BBs, to be fair) can be found at the top of this
+README.
