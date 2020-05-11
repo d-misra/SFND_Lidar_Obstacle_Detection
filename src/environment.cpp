@@ -68,7 +68,11 @@ void simpleHighway(pcl::visualization::PCLVisualizer::Ptr &viewer) {
 
     const auto maxIterations = 100;
     const auto distanceTolerance = 0.5F;
-    const auto[planeCloud, obstacleCloud] = pointProcessor->SegmentPlane(pointCloud, maxIterations, distanceTolerance);
+
+    // const auto [planeCloud, obstacleCloud] = pointProcessor->SegmentPlane(pointCloud, maxIterations, distanceTolerance);
+    const auto pair = pointProcessor->SegmentPlane(pointCloud, maxIterations, distanceTolerance);
+    const auto planeCloud = pair.first;
+    const auto obstacleCloud = pair.second;
 
     renderPointCloud(viewer, planeCloud, "plane", Color{0.623, 0.609, 0.591});
 

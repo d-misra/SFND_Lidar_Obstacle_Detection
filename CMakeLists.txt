@@ -38,7 +38,7 @@ target_link_libraries (environment ${PCL_LIBRARIES})
 # Our code uses some specific C++ features;
 target_compile_features(environment PRIVATE
         cxx_std_14      # requirement for PCL 1.10
-        cxx_std_17      # we're using structured bindings
+        # cxx_std_17      # we're using structured bindings
         # ... cxx_constexpr
         # ... cxx_auto_type
         # ... cxx_defaulted_functions
