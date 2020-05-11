@@ -143,7 +143,7 @@ void cityBlock(pcl::visualization::PCLVisualizer::Ptr &viewer, const ProcessPoin
         }
 
         if (renderBoxes) {
-            // const auto box = pointProcessor->BoundingBoxAxisAligned(cluster);
+            // const auto box = pointProcessor.BoundingBoxAxisAligned(cluster);
             const auto box = pointProcessor.BoundingBoxOriented(cluster);
             renderBox(viewer, box, clusterId, clusterColor);
         }
