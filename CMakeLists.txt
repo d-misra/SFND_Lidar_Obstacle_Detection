@@ -47,7 +47,7 @@ target_compile_features(environment PRIVATE
 
 # RANSAC quiz
 
-add_executable (ransac "src/quiz/ransac/ransac2d.cpp" "src/render/render.cpp")
+add_executable (ransac src/quiz/ransac/ransac2d.cpp src/render/render.cpp)
 target_link_libraries (ransac ${PCL_LIBRARIES})
 
 add_executable (cluster "src/quiz/cluster/cluster.cpp" "src/render/render.cpp")

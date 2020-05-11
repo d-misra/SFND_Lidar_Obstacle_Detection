@@ -67,8 +67,8 @@ render2DTree(const std::unique_ptr<Node>& node, pcl::visualization::PCLVisualize
     }
     ++iteration;
 
-    render2DTree(node->left, viewer, lowerWindow, iteration, depth + 1);
-    render2DTree(node->right, viewer, upperWindow, iteration, depth + 1);
+    render2DTree(node->smaller, viewer, lowerWindow, iteration, depth + 1);
+    render2DTree(node->greater, viewer, upperWindow, iteration, depth + 1);
 }
 
 std::vector<std::vector<int>>

@@ -2,16 +2,82 @@
 
 #include <pcl/common/pca.h>
 #include "processPointClouds.h"
+#include "render/render.h"
+#include "kdtree.h"
 
-
-//constructor:
 template<typename PointT>
-ProcessPointClouds<PointT>::ProcessPointClouds() {}
+pcl::PointIndices::Ptr
+ProcessPointClouds<PointT>::RansacPlane(typename pcl::PointCloud<PointT>::Ptr cloud, int maxIterations, float distanceTol) const {
+    std::unordered_set<std::size_t> inliersResult;
+    // srand(0);
 
+    const auto numPoints = cloud->points.size();
+    assert(numPoints >= 3); // ... and points are not collinear ...
 
-//de-constructor:
-template<typename PointT>
-ProcessPointClouds<PointT>::~ProcessPointClouds() {}
+    // For max iterations
+    for (auto i = 0; i < maxIterations; ++i) {
+        // Randomly sample subset and fit a plane.
+        // We're using a set here to ensure we never sample the same point twice.
+        std::unordered_set<std::size_t> inliers;
+        while (inliers.size() < 3) {
+            inliers.insert(rand() % numPoints);
+        }
+
+        // Get all points.
+        auto itr = inliers.begin();
+        const auto &p1 = cloud->points[*itr];
+        itr++;
+        const auto &p2 = cloud->points[*itr];
+        itr++;
+        const auto &p3 = cloud->points[*itr];
+
+        // Determine the plane through three points.
+        const auto v1 = Vect3{p2.x, p2.y, p2.z} - Vect3{p1.x, p1.y, p1.z};
+        const auto v2 = Vect3{p3.x, p3.y, p3.z} - Vect3{p1.x, p1.y, p1.z};
+
+        // Determine plane normal by taking the cross product.
+        const auto normal = v1.cross(v2);
+        const auto normalizer = 1.0 / normal.norm();
+
+        // Plane coefficients
+        const auto A = normal.x;
+        const auto B = normal.y;
+        const auto C = normal.z;
+        const auto D = -(A * p1.x + B * p1.y + C * p1.z);
+
+        // Measure distance between every point and fitted line
+        for (auto j = 0; j < numPoints; ++j) {
+
+            // Skip points we already know are inliers.
+            if (inliers.count(j) > 0) {
+                continue;
+            }
+
+            // Determine the distance of the current point to the line.
+            const auto &pt = cloud->points[j];
+            const auto d = std::abs(A * pt.x + B * pt.y + C * pt.z + D) * normalizer;
+
+            // If distance is smaller than threshold count it as inlier
+            if (d <= distanceTol) {
+                inliers.insert(j);
+            }
+        }
+
+        // Return indices of inliers from fitted line with most inliers.
+        // Specifically, we only keep the result if we found a better answer than
+        // the one we already have.
+        if (inliers.size() > inliersResult.size()) {
+            inliersResult = std::move(inliers);
+        }
+    }
+
+    pcl::PointIndices::Ptr result{new pcl::PointIndices};
+    for (const auto& idx : inliersResult) {
+        result->indices.push_back(idx);
+    }
+
+    return result;
+}
 
 
 template<typename PointT>
@@ -114,6 +180,8 @@ ProcessPointClouds<PointT>::SegmentPlane(typename pcl::PointCloud<PointT>::Ptr c
     // Time segmentation process
     auto startTime = std::chrono::steady_clock::now();
 
+#ifdef PLANE_RANSAC_PCL
+
     // Prepare the (random) sample consensus based point segmentation.
     // See e.g.
     // - https://pcl-tutorials.readthedocs.io/en/master/planar_segmentation.html
@@ -139,6 +207,17 @@ ProcessPointClouds<PointT>::SegmentPlane(typename pcl::PointCloud<PointT>::Ptr c
     // Separate the result into inliers and outliers.
     const auto planeAndObstacles = SeparateClouds(inliers, cloud);
 
+#else
+
+    const auto inliers = RansacPlane(cloud, maxIterations, distanceThreshold);
+    if (inliers->indices.empty()) {
+        std::cerr << "Could not estimate planar model for the given point cloud." << std::endl;
+    }
+
+    const auto planeAndObstacles = SeparateClouds(inliers, cloud);
+
+#endif
+
     auto endTime = std::chrono::steady_clock::now();
     auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
     std::cout << "plane segmentation took " << elapsedTime.count() << " ms" << std::endl;
@@ -157,6 +236,8 @@ ProcessPointClouds<PointT>::Clustering(typename pcl::PointCloud<PointT>::Ptr clo
 
     std::vector<typename pcl::PointCloud<PointT>::Ptr> clusters;
 
+#ifdef EUCLIDEAN_CLUSTERING_PCL
+
     // Creating the KdTree object for the search method of the extraction.
     typename pcl::search::KdTree<PointT>::Ptr tree(new pcl::search::KdTree<PointT>);
     tree->setInputCloud(cloud);
@@ -171,6 +252,55 @@ ProcessPointClouds<PointT>::Clustering(typename pcl::PointCloud<PointT>::Ptr clo
     ec.setInputCloud(cloud);
     ec.extract(clusterIndices);
 
+#else
+
+    // Build the Kd-tree.
+    KdTree tree;
+    const auto& points = cloud->points;
+    for (auto i = 0; i < points.size(); ++i) {
+        const auto& data = points[i].data;
+        tree.insert(data, i);
+    }
+
+    std::vector<pcl::PointIndices> clusterIndices;
+    std::vector<bool> processed(points.size(), false);
+    for (auto seedIndex = 0; seedIndex < points.size(); ++seedIndex) {
+        if (processed[seedIndex]) continue;
+
+        pcl::PointIndices cluster;
+
+        // Boundary to explore nodes at that are candidates for the cluster
+        std::stack<int> boundary{};
+        boundary.push(seedIndex);
+
+        // If we terminate here according to cluster size, things will get weird.
+        while (!boundary.empty()) {
+            const auto pointIndex = boundary.top();
+            boundary.pop();
+            if (processed[pointIndex]) {
+                continue;
+            }
+
+            processed[pointIndex] = true;
+            cluster.indices.push_back(pointIndex);
+
+            const auto& data = points[pointIndex].data;
+            const auto nearest = tree.search(data, clusterTolerance);
+            for (const auto& neighborIndex : nearest) {
+                if (!processed[neighborIndex]) {
+                    boundary.push(neighborIndex);
+                }
+            }
+        }
+
+        const auto clusterSize = cluster.indices.size();
+        if ((clusterSize >= minSize) && (clusterSize <= maxSize)) {
+            clusterIndices.push_back(std::move(cluster));
+        }
+    }
+
+#endif
+
     // Create a new cloud per cluster.
     for (const auto &clusterIndex : clusterIndices) {
         typename pcl::PointCloud<PointT>::Ptr cloud_cluster(new pcl::PointCloud<PointT>);
@@ -179,7 +309,7 @@ ProcessPointClouds<PointT>::Clustering(typename pcl::PointCloud<PointT>::Ptr clo
         cloud_cluster->is_dense = true;
 
         for (const auto& index : clusterIndex.indices) {
-            cloud_cluster->points.push_back(cloud->points[index]);
+            cloud_cluster->points.push_back(points[index]);
         }
 
         clusters.push_back(std::move(cloud_cluster));
@@ -217,6 +347,8 @@ BoxQ ProcessPointClouds<PointT>::BoundingBoxOriented(typename pcl::PointCloud<Po
     // See: http://codextechnicanum.blogspot.com/2015/04/find-minimum-oriented-bounding-box-of.html
 
     BoxQ box{};
+
+    assert(cluster->points.size() >= 3); // ... and not collinear ...
 
     // This block is debatable, but makes sense for street-bound cars (i.e., non-flying ones ...)
     // It suppresses the Z coordinate and forces the PCA to see X/Y extents only.

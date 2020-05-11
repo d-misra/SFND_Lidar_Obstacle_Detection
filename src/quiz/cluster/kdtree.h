@@ -12,11 +12,26 @@
 struct Node {
     std::vector<float> point;
     int id;
-    std::unique_ptr<Node> left;
-    std::unique_ptr<Node> right;
+    std::unique_ptr<Node> smaller;
+    std::unique_ptr<Node> greater;
 
     Node(std::vector<float> arr, int setId)
-            : point(std::move(arr)), id(setId), left(nullptr), right(nullptr) {}
+            : point(std::move(arr)), id(setId), smaller(nullptr), greater(nullptr) {}
+};
+
+// Helper structure used during radius search.
+struct NodeBoundary {
+    const std::unique_ptr<Node>* nextNode;
+    const std::size_t nextDimension;
+
+    NodeBoundary(const std::unique_ptr<Node>* nextNode, const std::size_t nextDimension)
+            : nextNode(nextNode), nextDimension(nextDimension) {}
+
+    NodeBoundary(const NodeBoundary& other)
+            : nextNode(other.nextNode), nextDimension(other.nextDimension) {}
+
+    NodeBoundary(NodeBoundary&& other)
+            : nextNode(std::move(other.nextNode)), nextDimension(other.nextDimension) {}
 };
 
 struct KdTree {
@@ -41,22 +56,22 @@ struct KdTree {
 
             const auto shouldGoLeft = point[dimension] <= n->point[dimension];
             if (shouldGoLeft) {
-                if (n->left != nullptr) {
-                    node = &n->left;
+                if (n->smaller != nullptr) {
+                    node = &n->smaller;
                     continue;
                 }
 
-                n->left = std::move(std::make_unique<Node>(point, id));
+                n->smaller = std::move(std::make_unique<Node>(point, id));
                 break;
             }
 
             // At this point, we need to go right.
-            if (n->right != nullptr) {
-                node = &n->right;
+            if (n->greater != nullptr) {
+                node = &n->greater;
                 continue;
             }
 
-            n->right = std::move(std::make_unique<Node>(point, id));
+            n->greater = std::move(std::make_unique<Node>(point, id));
             break;
         }
     }
@@ -72,16 +87,19 @@ struct KdTree {
             return ids;
         }
 
-        std::queue<std::unique_ptr<Node>*> boundary{};
-        boundary.push(&root);
+        std::queue<NodeBoundary> boundary{};
+        boundary.push(NodeBoundary{&root, 0});
 
         auto dimension = -1;
         while (!boundary.empty()) {
-            dimension = dimension + 1 < numDims ? dimension + 1 : 0; // avoid modulo, use conditional assignment
-
-            const auto& n = (*boundary.front());
+            const auto entry = boundary.front();
             boundary.pop();
+
+            const auto& n = *entry.nextNode;
             assert(n != nullptr);
+
+            const auto dimension = entry.nextDimension;
+            const auto nextDimension = (dimension + 1) < numDims ? (dimension + 1) : 0;
 
 #ifdef KD_BOX_BROADPHASE
             // We're using a box check as a broadphase check.
@@ -108,17 +126,17 @@ struct KdTree {
             }
 
             // Finally, we check whether the target extends the split of this node in either direction.
-            const auto hasLeftChild = n->left != nullptr;
-            const auto hasRightChild = n->right != nullptr;
-            const auto boxExtendsLeft = (target[dimension] - distanceTol) < n->point[dimension];
-            const auto boxExtendsRight = (target[dimension] + distanceTol) > n->point[dimension];
+            const auto hasSmallerChild = n->smaller != nullptr;
+            const auto hasGreaterChild = n->greater != nullptr;
+            const auto shouldScanSmaller = (target[dimension] - distanceTol) <= n->point[dimension];
+            const auto shouldScanGreater = (target[dimension] + distanceTol) >= n->point[dimension];
 
-            if (hasLeftChild && boxExtendsLeft) {
-                boundary.push(&n->left);
+            if (hasSmallerChild && shouldScanSmaller) {
+                boundary.push(NodeBoundary{&n->smaller, nextDimension});
             }
 
-            if (hasRightChild && boxExtendsRight) {
-                boundary.push(&n->right);
+            if (hasGreaterChild && shouldScanGreater) {
+                boundary.push(NodeBoundary{&n->greater, nextDimension});
             }
         }
 
