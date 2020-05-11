@@ -3,12 +3,13 @@
 #include <pcl/common/pca.h>
 #include "processPointClouds.h"
 #include "render/render.h"
+#include "kdtree.h"
 
 template<typename PointT>
 pcl::PointIndices::Ptr
 ProcessPointClouds<PointT>::RansacPlane(typename pcl::PointCloud<PointT>::Ptr cloud, int maxIterations, float distanceTol) const {
     std::unordered_set<std::size_t> inliersResult;
-    srand(time(0));
+    // srand(0);
 
     const auto numPoints = cloud->points.size();
     assert(numPoints >= 3); // ... and points are not collinear ...
@@ -235,6 +236,8 @@ ProcessPointClouds<PointT>::Clustering(typename pcl::PointCloud<PointT>::Ptr clo
 
     std::vector<typename pcl::PointCloud<PointT>::Ptr> clusters;
 
+#ifdef EUCLIDEAN_CLUSTERING_PCL
+
     // Creating the KdTree object for the search method of the extraction.
     typename pcl::search::KdTree<PointT>::Ptr tree(new pcl::search::KdTree<PointT>);
     tree->setInputCloud(cloud);
@@ -249,6 +252,55 @@ ProcessPointClouds<PointT>::Clustering(typename pcl::PointCloud<PointT>::Ptr clo
     ec.setInputCloud(cloud);
     ec.extract(clusterIndices);
 
+#else
+
+    // Build the Kd-tree.
+    KdTree tree;
+    const auto& points = cloud->points;
+    for (auto i = 0; i < points.size(); ++i) {
+        const auto& data = points[i].data;
+        tree.insert(data, i);
+    }
+
+    std::vector<pcl::PointIndices> clusterIndices;
+    std::vector<bool> processed(points.size(), false);
+    for (auto seedIndex = 0; seedIndex < points.size(); ++seedIndex) {
+        if (processed[seedIndex]) continue;
+
+        pcl::PointIndices cluster;
+
+        // Boundary to explore nodes at that are candidates for the cluster
+        std::stack<int> boundary{};
+        boundary.push(seedIndex);
+
+        // If we terminate here according to cluster size, things will get weird.
+        while (!boundary.empty()) {
+            const auto pointIndex = boundary.top();
+            boundary.pop();
+            if (processed[pointIndex]) {
+                continue;
+            }
+
+            processed[pointIndex] = true;
+            cluster.indices.push_back(pointIndex);
+
+            const auto& data = points[pointIndex].data;
+            const auto nearest = tree.search(data, clusterTolerance);
+            for (const auto& neighborIndex : nearest) {
+                if (!processed[neighborIndex]) {
+                    boundary.push(neighborIndex);
+                }
+            }
+        }
+
+        const auto clusterSize = cluster.indices.size();
+        if ((clusterSize >= minSize) && (clusterSize <= maxSize)) {
+            clusterIndices.push_back(std::move(cluster));
+        }
+    }
+
+#endif
+
     // Create a new cloud per cluster.
     for (const auto &clusterIndex : clusterIndices) {
         typename pcl::PointCloud<PointT>::Ptr cloud_cluster(new pcl::PointCloud<PointT>);
@@ -257,7 +309,7 @@ ProcessPointClouds<PointT>::Clustering(typename pcl::PointCloud<PointT>::Ptr clo
         cloud_cluster->is_dense = true;
 
         for (const auto& index : clusterIndex.indices) {
-            cloud_cluster->points.push_back(cloud->points[index]);
+            cloud_cluster->points.push_back(points[index]);
         }
 
         clusters.push_back(std::move(cloud_cluster));
@@ -295,6 +347,8 @@ BoxQ ProcessPointClouds<PointT>::BoundingBoxOriented(typename pcl::PointCloud<Po
     // See: http://codextechnicanum.blogspot.com/2015/04/find-minimum-oriented-bounding-box-of.html
 
     BoxQ box{};
+
+    assert(cluster->points.size() >= 3); // ... and not collinear ...
 
     // This block is debatable, but makes sense for street-bound cars (i.e., non-flying ones ...)
     // It suppresses the Z coordinate and forces the PCA to see X/Y extents only.
